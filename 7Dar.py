@@ -5,7 +5,6 @@ from io import BytesIO
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 
 st.set_page_config(page_title="AirSide PRO", layout="wide")
@@ -35,10 +34,9 @@ potencias = []
 correntes_motores = []
 
 for i in range(num_motores):
-    cv = st.number_input(f"Motor {i+1} Potência (CV)", 0.0, 200.0, 5.0)
+    cv = st.number_input(f"Motor {i+1} - Potência (CV)", 0.0, 200.0, 5.0)
     potencias.append(cv)
 
-    # Corrente estimada trifásica 380V
     corrente = round((cv * 736) / (math.sqrt(3) * 380 * 0.85), 2)
     correntes_motores.append(corrente)
 
@@ -62,7 +60,7 @@ else:
 st.write(f"Corrente Resistência: {corrente_res} A")
 
 # ===============================
-# 📐 DIMENSIONAMENTO INTERNO
+# 📐 CABEAMENTO INTERNO
 # ===============================
 
 st.header("📐 Cabeamento Interno")
@@ -84,7 +82,7 @@ num_condutores = 4 if tensao == 380 else 3
 metragem_final = round(metragem_total * num_condutores, 2)
 
 # ===============================
-# 🔌 DEFINIÇÃO CABO E TERMINAL
+# 🔌 DIMENSIONAMENTO GERAL
 # ===============================
 
 corrente_geral = corrente_total_motores + corrente_res
@@ -103,6 +101,21 @@ else:
     breaker = 125
 
 terminais = num_condutores * 2
+
+# ===============================
+# 📊 RESUMO TÉCNICO
+# ===============================
+
+st.header("📊 Resumo Técnico do Projeto")
+
+st.write(f"**Cliente:** {cliente}")
+st.write(f"**OS:** {os}")
+st.write(f"**Responsável:** {responsavel}")
+st.write(f"**Modelo:** {modelo}")
+st.write("---")
+st.write(f"Corrente Total do Sistema: **{round(corrente_geral,2)} A**")
+st.write(f"Disjuntor Geral Sugerido: **{breaker} A**")
+st.write(f"Bitola Principal Sugerida: **{cable}**")
 
 # ===============================
 # 📋 LISTA DE MATERIAIS
@@ -135,7 +148,7 @@ def gerar_lista_materiais():
 
 df_materiais = gerar_lista_materiais()
 
-st.subheader("📊 Lista de Materiais")
+st.subheader("📋 Lista de Materiais")
 st.dataframe(df_materiais)
 
 # ===============================
@@ -166,8 +179,19 @@ def gerar_pdf(df):
     elements = []
     style = getSampleStyleSheet()
 
-    elements.append(Paragraph("AirSide PRO - Lista de Materiais", style['Heading1']))
+    elements.append(Paragraph("AirSide PRO - Relatório Técnico", style['Heading1']))
     elements.append(Spacer(1, 12))
+
+    elements.append(Paragraph(f"Cliente: {cliente}", style['Normal']))
+    elements.append(Paragraph(f"OS: {os}", style['Normal']))
+    elements.append(Paragraph(f"Responsável: {responsavel}", style['Normal']))
+    elements.append(Paragraph(f"Modelo: {modelo}", style['Normal']))
+    elements.append(Spacer(1, 12))
+
+    elements.append(Paragraph(f"Corrente Total: {round(corrente_geral,2)} A", style['Normal']))
+    elements.append(Paragraph(f"Disjuntor Geral: {breaker} A", style['Normal']))
+    elements.append(Paragraph(f"Bitola Principal: {cable}", style['Normal']))
+    elements.append(Spacer(1, 20))
 
     data = [df.columns.tolist()] + df.values.tolist()
     table = Table(data)
@@ -186,5 +210,5 @@ pdf_file = gerar_pdf(df_materiais)
 st.download_button(
     "📄 Baixar PDF",
     pdf_file,
-    file_name="lista_materiais.pdf"
+    file_name="relatorio_tecnico.pdf"
 )
